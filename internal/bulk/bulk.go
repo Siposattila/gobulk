@@ -2,7 +2,6 @@ package bulk
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -98,7 +97,7 @@ func (b *Bulk) Start() {
 				b.EM.GormORM.Create(last)
 				console.Warning("Unexpected shutdown while sending emails. Saving last progress...")
 
-				return errors.New("")
+				os.Exit(1)
 			default:
 				time.Sleep(time.Duration(b.Config.SendDelay) * time.Millisecond)
 				b.EmailClient.Send(&result)
