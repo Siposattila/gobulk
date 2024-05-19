@@ -22,7 +22,6 @@ type EmailBody struct {
 	Farewell    *string
 	Company     *string
 	Unsubscribe *string
-	Name        *string
 }
 
 type client struct {
@@ -63,15 +62,14 @@ func (c *client) Send(e *Email) {
 		console.Fatal("Failed to load template!")
 	}
 
+	emailBody := c.Body
 	var body bytes.Buffer
 	mimeHeaders := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
 	body.Write([]byte(fmt.Sprintf("Subject: %s \nFrom: %s \nTo: %s \n%s\n\n", *c.Body.Subject, *c.Email, e.Email, mimeHeaders)))
 
-	*c.Body.Unsubscribe += "/" + e.Email
-	c.Body.Name = &e.Name
+	*emailBody.Unsubscribe = *c.Body.Unsubscribe + "/" + e.Email
+	*emailBody.Greeting = strings.ReplaceAll(*c.Body.Greeting, "[name]", e.Name)
 	template.Execute(&body, c.Body)
-	helper := *c.Body.Unsubscribe
-	*c.Body.Unsubscribe = helper[:strings.LastIndex(helper, "/")]
 
 	err := smtp.SendMail(*c.Host+":"+*c.Port, *c.Auth, *c.Email, []string{e.Email}, body.Bytes())
 	if err != nil {
