@@ -10,7 +10,8 @@ import (
 var ShutdownChan = make(chan os.Signal, 1)
 
 const (
-	LAST_PROCESS_SEND = 1
+	LAST_PROCESS_SEND     = 1
+	LAST_PROCESS_VALIDATE = 2
 )
 
 type Last struct {

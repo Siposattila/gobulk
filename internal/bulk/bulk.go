@@ -88,7 +88,11 @@ func (b *Bulk) Start() {
 	}
 
 	var results []email.Email
-	b.EM.GormORM.Where("valid = ? AND status = ?", email.EMAIL_VALID, email.EMAIL_STATUS_ACTIVE).Offset(offset).FindInBatches(&results, (60*1000/int(b.Config.SendDelay))*2, func(tx *g.DB, batch int) error {
+	b.EM.GormORM.Where(
+		"valid = ? AND status = ?",
+		email.EMAIL_VALID,
+		email.EMAIL_STATUS_ACTIVE,
+	).Offset(offset).FindInBatches(&results, (60*1000/int(b.Config.SendDelay))*2, func(tx *g.DB, batch int) error {
 		for _, result := range results {
 			select {
 			case <-email.ShutdownChan:
@@ -109,6 +113,7 @@ func (b *Bulk) Start() {
 	console.Success("Bulk email sending is done!")
 }
 
+// FIXME: code dup (validate.go)
 func (b *Bulk) getLast() *email.Last {
 	var last email.Last
 	tx := b.EM.GormORM.First(&last, "process_id = ?", email.LAST_PROCESS_SEND)
