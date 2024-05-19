@@ -1,0 +1,4 @@
+gobulk
+cmd/gobulk.db
+.docker/db/*
+!.docker/db/base.sql
