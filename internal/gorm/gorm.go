@@ -9,6 +9,7 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 type EntityManager struct {
@@ -16,7 +17,9 @@ type EntityManager struct {
 }
 
 func Gorm() *EntityManager {
-	database, error := gorm.Open(sqlite.Open("gobulk.db"), &gorm.Config{})
+	database, error := gorm.Open(sqlite.Open("gobulk.db"), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
 	if error != nil {
 		console.Fatal("Fatal error during connecting to database: " + error.Error())
 	}
@@ -47,7 +50,9 @@ func GormExternal(dsn *string) *EntityManager {
 		console.Fatal("Bad mysql DSN!")
 	}
 
-	database, error := gorm.Open(mysql.Open(*dsn), &gorm.Config{})
+	database, error := gorm.Open(mysql.Open(*dsn), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
 	if error != nil {
 		console.Fatal("Fatal error during connecting to database: " + error.Error())
 	}
