@@ -15,4 +15,3 @@ repos:
     hooks:
     -   id: go-fmt
     -   id: go-test-repo-mod
-    -   id: go-build-repo-pkg

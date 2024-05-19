@@ -1,4 +1,7 @@
-gobulk
+cmd/gobulk/*
+!cmd/gobulk/main.go
+!cmd/gobulk/gobulk.db
+!cmd/gobulk/bulk.html
 cmd/gobulk.db
 .docker/db/*
 !.docker/db/base.sql

@@ -25,7 +25,7 @@ jobs:
       run: go mod download
 
     - name: Build
-      run: go build -v ./cmd/gobulk/main.go
+      run: go build -v ./cmd/gobulk
 
     - name: Test
       run: go test -v ./...
