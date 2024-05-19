@@ -22,10 +22,10 @@ func Init() *Validate {
 func (v *Validate) Start() {
 	console.Normal("Validation is started. This may take a long time!!!")
 	var results []email.Email
-	v.EM.GormORM.Where("valid = ?", email.EMAIL_INVALID).FindInBatches(&results, 100, func(tx *g.DB, batch int) error {
+	v.EM.GormORM.Where("valid = ? AND status = ?", email.EMAIL_INVALID, email.EMAIL_STATUS_ACTIVE).FindInBatches(&results, 100, func(tx *g.DB, batch int) error {
 		for _, result := range results {
 			result.ValidateEmail()
-            v.EM.GormORM.Save(&result)
+			v.EM.GormORM.Save(&result)
 		}
 
 		// Returning an error will stop further batch processing

@@ -80,15 +80,17 @@ func createBasicConfiguration(g *gorm.DB) {
 
 	if result.RowsAffected != 1 {
 		conf = config.Config{
-            MysqlDSN:               "root:123456@tcp(localhost:3306)/xy?charset=utf8mb4&parseTime=True&loc=Local",
-			SyncCron:               "0 0 * * *",
-			EmailDSN:               "smtp://user:pass@localhost:1025",
-			SendDelay:              4615,
-			MysqlQueryNameAndEmail: "SELECT DISTINCT email, name FROM users;",
-			CompanyName:            "GoBulk",
-			UnsubscribeEndpoint:    "http://localhost:2000",
+			MysqlDSN:            "root:123456@tcp(localhost:3306)/xy?charset=utf8mb4&parseTime=True&loc=Local",
+			SyncCron:            "0 0 * * *",
+			EmailDSN:            "smtp://user:pass@localhost:1025",
+			SendDelay:           4615,
+			MysqlQuery:          "SELECT DISTINCT email, name FROM users;",
+			CompanyName:         "GoBulk",
+			HttpServerPort:      "2000",
+			UnsubscribeEndpoint: "http://localhost:2000/unsub",
+			ResubscribeEndpoint: "http://localhost:2000/resub",
 		}
 		g.Create(conf)
-        console.Fatal("Configuration was not found! Basic configuration was created in the local db.")
+		console.Fatal("Configuration was not found! Basic configuration was created in the local db.")
 	}
 }

@@ -86,7 +86,7 @@ func (s *Sync) cacheMysqlData() {
 	s.EM.GormORM.Exec("DELETE FROM caches;")
 
 	var results []email.Cache
-	s.MEM.GormORM.Raw(s.Config.MysqlQueryNameAndEmail).FindInBatches(&results, 100, func(tx *g.DB, batch int) error {
+	s.MEM.GormORM.Raw(s.Config.MysqlQuery).FindInBatches(&results, 100, func(tx *g.DB, batch int) error {
 		for _, result := range results {
 			tx := s.EM.GormORM.Create(result)
 			if tx.Error != nil {

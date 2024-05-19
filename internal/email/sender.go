@@ -15,18 +15,25 @@ type ClientInterface interface {
 	Send(e *Email)
 }
 
-type client struct {
-	Auth        *smtp.Auth
-	Host        *string
-	Port        *string
-	Email       *string
+type EmailBody struct {
 	Subject     *string
+	Greeting    *string
 	Message     *string
+	Farewell    *string
 	Company     *string
 	Unsubscribe *string
+	Name        *string
 }
 
-func NewClient(dsn *string, subject string, message string, company *string, unsubscribe *string) ClientInterface {
+type client struct {
+	Auth  *smtp.Auth
+	Host  *string
+	Port  *string
+	Email *string
+	Body  *EmailBody
+}
+
+func NewClient(dsn *string, body *EmailBody) ClientInterface {
 	match, _ := regexp.MatchString(`^smtp:\/\/[^:]+:[^@]+@[^:]+:\d+$`, *dsn)
 	if !match {
 		console.Fatal("Bad email DSN!")
@@ -42,14 +49,11 @@ func NewClient(dsn *string, subject string, message string, company *string, uns
 	auth := smtp.PlainAuth("", from, password, host)
 
 	return &client{
-		Auth:        &auth,
-		Host:        &host,
-		Port:        &port,
-		Email:       &from,
-		Subject:     &subject,
-		Message:     &message,
-		Company:     company,
-		Unsubscribe: unsubscribe,
+		Auth:  &auth,
+		Host:  &host,
+		Port:  &port,
+		Email: &from,
+		Body:  body,
 	}
 }
 
@@ -61,19 +65,13 @@ func (c *client) Send(e *Email) {
 
 	var body bytes.Buffer
 	mimeHeaders := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
-	body.Write([]byte(fmt.Sprintf("Subject: %s \nFrom: %s \nTo: %s \n%s\n\n", *c.Subject, *c.Email, e.Email, mimeHeaders)))
+	body.Write([]byte(fmt.Sprintf("Subject: %s \nFrom: %s \nTo: %s \n%s\n\n", *c.Body.Subject, *c.Email, e.Email, mimeHeaders)))
 
-	template.Execute(&body, struct {
-		Name        string
-		Message     string
-		Company     string
-		Unsubscribe string
-	}{
-		Name:        e.Name,
-		Message:     *c.Message,
-		Company:     *c.Company,
-		Unsubscribe: *c.Unsubscribe,
-	})
+	*c.Body.Unsubscribe += "/" + e.Email
+	c.Body.Name = &e.Name
+	template.Execute(&body, c.Body)
+	helper := *c.Body.Unsubscribe
+	*c.Body.Unsubscribe = helper[:strings.LastIndex(helper, "/")]
 
 	err := smtp.SendMail(*c.Host+":"+*c.Port, *c.Auth, *c.Email, []string{e.Email}, body.Bytes())
 	if err != nil {

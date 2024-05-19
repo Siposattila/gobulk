@@ -31,18 +31,50 @@ func Init() *Bulk {
 	}
 	subject = strings.TrimSpace(subject)
 
-	fmt.Println("Please give a content:")
-	content, err := reader.ReadString('\n')
+	fmt.Println("Please give a greeting:")
+	greeting, err := reader.ReadString('\n')
 	if err != nil {
 		console.Fatal(err)
 	}
-	content = strings.TrimSpace(content)
+	greeting = strings.TrimSpace(greeting)
+
+	fmt.Println("Please give a content:")
+	message, err := reader.ReadString('\n')
+	if err != nil {
+		console.Fatal(err)
+	}
+	message = strings.TrimSpace(message)
+
+	fmt.Println("Please give a farewell:")
+	farewell, err := reader.ReadString('\n')
+	if err != nil {
+		console.Fatal(err)
+	}
+	farewell = strings.TrimSpace(farewell)
 
 	bulk := &Bulk{
 		EM: gorm.Gorm(),
 	}
 	bulk.Config = gorm.GetConfig(bulk.EM.GormORM)
-	bulk.EmailClient = email.NewClient(&bulk.Config.EmailDSN, subject, content, &bulk.Config.CompanyName, &bulk.Config.UnsubscribeEndpoint)
+
+	body := email.EmailBody{
+		Subject:     &subject,
+		Greeting:    &greeting,
+		Message:     &message,
+		Farewell:    &farewell,
+		Company:     &bulk.Config.CompanyName,
+		Unsubscribe: &bulk.Config.UnsubscribeEndpoint,
+	}
+	bulk.EmailClient = email.NewClient(&bulk.Config.EmailDSN, &body)
+
+	return bulk
+}
+
+func InitForServer() *Bulk {
+	bulk := &Bulk{
+		EM: gorm.Gorm(),
+	}
+	bulk.Config = gorm.GetConfig(bulk.EM.GormORM)
 
 	return bulk
 }
@@ -58,7 +90,7 @@ func (b *Bulk) Start() {
 	}
 
 	var results []email.Email
-	b.EM.GormORM.Where("valid = ?", email.EMAIL_VALID).Offset(offset).FindInBatches(&results, (60*1000/int(b.Config.SendDelay))*2, func(tx *g.DB, batch int) error {
+	b.EM.GormORM.Where("valid = ? AND status = ?", email.EMAIL_VALID, email.EMAIL_STATUS_ACTIVE).Offset(offset).FindInBatches(&results, (60*1000/int(b.Config.SendDelay))*2, func(tx *g.DB, batch int) error {
 		for _, result := range results {
 			select {
 			case <-email.ShutdownChan:
