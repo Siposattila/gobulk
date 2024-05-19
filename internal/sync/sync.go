@@ -1,6 +1,8 @@
 package sync
 
 import (
+	"os"
+	"strings"
 	"time"
 
 	"github.com/Siposattila/gobulk/internal/config"
@@ -12,11 +14,10 @@ import (
 )
 
 type Sync struct {
-	Config      *config.Config
-	Cron        cron.Schedule
-	EM          *gorm.EntityManager
-	MEM         *gorm.EntityManager
-	stopChannel chan bool
+	Config *config.Config
+	Cron   cron.Schedule
+	EM     *gorm.EntityManager
+	MEM    *gorm.EntityManager
 }
 
 func Init() *Sync {
@@ -40,10 +41,6 @@ func (s *Sync) Start() {
 	s.syncProcess()
 }
 
-func (s *Sync) Stop() {
-	s.stopChannel <- true
-}
-
 func (s *Sync) syncProcess() {
 	s.sync()
 	timeSignal := time.After(s.Cron.Next(time.Now()).Sub(time.Now()))
@@ -53,8 +50,9 @@ func (s *Sync) syncProcess() {
 	case <-timeSignal:
 		s.sync()
 		s.syncProcess()
-	case <-s.stopChannel:
+	case <-email.ShutdownChan:
 		console.Normal("Stopping sync process...")
+		os.Exit(1)
 	}
 }
 
@@ -74,7 +72,7 @@ func (s *Sync) sync() {
 			}
 		} else {
 			e.Status = email.EMAIL_STATUS_INACTIVE
-			s.EM.GormORM.Save(&e)
+			s.EM.GormORM.Save(e)
 			console.Normal("Found record " + d.Name + " " + d.Email)
 		}
 	}
@@ -82,17 +80,21 @@ func (s *Sync) sync() {
 }
 
 func (s *Sync) cacheMysqlData() {
+	// TODO: will need a logic to know when to delete cache
+	// for now this is okay
+
 	// This is TRUNCATE in sqlite
 	s.EM.GormORM.Exec("DELETE FROM caches;")
 
 	var results []email.Cache
 	s.MEM.GormORM.Raw(s.Config.MysqlQuery).FindInBatches(&results, 100, func(tx *g.DB, batch int) error {
 		for _, result := range results {
-			tx := s.EM.GormORM.Create(result)
-			if tx.Error != nil {
-				console.Error(tx.Error)
+			result.Name = strings.TrimSpace(result.Name)
+			result.Email = strings.ToLower(strings.TrimSpace(result.Email))
 
-				return tx.Error
+			if email.IsEmail(&result.Email) {
+				s.EM.GormORM.Create(result)
+				console.Normal("Create cache " + result.Name + " " + result.Email)
 			}
 		}
 

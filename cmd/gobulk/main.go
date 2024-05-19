@@ -4,6 +4,7 @@ import (
 	"flag"
 
 	"github.com/Siposattila/gobulk/internal/bulk"
+	"github.com/Siposattila/gobulk/internal/email"
 	"github.com/Siposattila/gobulk/internal/sync"
 	"github.com/Siposattila/gobulk/internal/validate"
 )
@@ -25,6 +26,8 @@ func main() {
 	flag.Bool("bulk", false, "This flag will start gobulk's bulk email sending process.")
 
 	flag.Parse()
+
+	email.ListenForKill()
 
 	if isFlagPassed("sync") {
 		if isFlagPassed("server") {

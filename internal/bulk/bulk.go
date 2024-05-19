@@ -79,7 +79,6 @@ func InitForServer() *Bulk {
 }
 
 func (b *Bulk) Start() {
-	email.ListenForKill()
 	console.Normal("Bulk email sending is starting now. This may take a long time!!!")
 
 	last := b.getLast()
