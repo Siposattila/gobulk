@@ -3,6 +3,7 @@ package email
 import (
 	"net"
 	"net/smtp"
+	"regexp"
 	"strings"
 
 	"github.com/Siposattila/gobulk/internal/console"
@@ -40,4 +41,10 @@ func (e *Email) verifyEmail() bool {
 	}
 
 	return EMAIL_VALID
+}
+
+func IsEmail(email *string) bool {
+	match, _ := regexp.MatchString(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`, *email)
+
+	return match
 }

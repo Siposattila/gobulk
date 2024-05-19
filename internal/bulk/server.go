@@ -12,7 +12,7 @@ import (
 
 func (b *Bulk) unsubscribe(w http.ResponseWriter, r *http.Request) {
 	mail := strings.ToLower(r.PathValue("email"))
-	if !strings.Contains(mail, "@") {
+	if !email.IsEmail(&mail) {
 		http.Error(w, "Invalid parameter!", http.StatusBadRequest)
 
 		return
@@ -55,7 +55,7 @@ func (b *Bulk) unsubscribe(w http.ResponseWriter, r *http.Request) {
 
 func (b *Bulk) resubscribe(w http.ResponseWriter, r *http.Request) {
 	mail := strings.ToLower(r.PathValue("email"))
-	if !strings.Contains(mail, "@") {
+	if !email.IsEmail(&mail) {
 		http.Error(w, "Invalid parameter!", http.StatusBadRequest)
 
 		return
