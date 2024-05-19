@@ -23,19 +23,19 @@ func (e *Email) verifyEmail() bool {
 
 	client, err := smtp.Dial(mxHost + ":25")
 	if err != nil {
-		console.Error("Failed to connect to SMTP server:", err)
+		console.Error("Failed to connect to SMTP server")
 
 		return EMAIL_INVALID
 	}
 	defer client.Close()
 
-	client.Hello("localhost")
-	client.Mail("me@example.com")
+	client.Hello("localhost")     // TODO: needs real domain
+	client.Mail("me@example.com") // TODO: needs real email
 	rcptErr := client.Rcpt(e.Email)
 	client.Quit()
 
 	if rcptErr != nil {
-		console.Warning("Invalid email address:", rcptErr)
+		console.Warning("Invalid email address")
 
 		return EMAIL_INVALID
 	}
