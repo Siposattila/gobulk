@@ -30,7 +30,7 @@ func NewEmail(email *string, name *string) *Email {
 }
 
 func (e *Email) ValidateEmail() {
-	time.Sleep(1 * time.Second)
+	time.Sleep(300 * time.Millisecond)
 
 	validity := e.verifyEmail()
 	e.Valid = validity

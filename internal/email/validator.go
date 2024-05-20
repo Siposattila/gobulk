@@ -5,8 +5,6 @@ import (
 	"net/smtp"
 	"regexp"
 	"strings"
-
-	"github.com/Siposattila/gobulk/internal/console"
 )
 
 func (e *Email) verifyEmail() bool {
@@ -14,8 +12,6 @@ func (e *Email) verifyEmail() bool {
 
 	mxRecords, err := net.LookupMX(domain)
 	if err != nil {
-		console.Error("No MX record found")
-
 		return EMAIL_INVALID
 	}
 
@@ -23,8 +19,6 @@ func (e *Email) verifyEmail() bool {
 
 	client, err := smtp.Dial(mxHost + ":25")
 	if err != nil {
-		console.Error("Failed to connect to SMTP server")
-
 		return EMAIL_INVALID
 	}
 	defer client.Close()
@@ -35,8 +29,6 @@ func (e *Email) verifyEmail() bool {
 	client.Quit()
 
 	if rcptErr != nil {
-		console.Warning("Invalid email address")
-
 		return EMAIL_INVALID
 	}
 

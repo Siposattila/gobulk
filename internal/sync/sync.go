@@ -2,7 +2,6 @@ package sync
 
 import (
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/Siposattila/gobulk/internal/console"
@@ -96,7 +95,6 @@ func (s *Sync) cacheMysqlData() {
 	s.database.GetEntityManager().GetGormORM().Exec("DELETE FROM caches;")
 
 	var (
-		wg          sync.WaitGroup
 		results     []email.Cache
 		batchInsert []email.Cache
 		total       int64
@@ -109,28 +107,22 @@ func (s *Sync) cacheMysqlData() {
 	s.database.GetMysqlEntityManager().GetGormORM().Raw(
 		s.config.GetMysqlQuery(),
 	).FindInBatches(&results, 100, func(tx *gorm.DB, batch int) error {
-		wg.Add(1)
-		go func(results []email.Cache) {
-			defer wg.Done()
-			for _, result := range results {
-				bar.Add(1)
-				result.Name = strings.TrimSpace(result.Name)
-				result.Email = strings.ToLower(strings.TrimSpace(result.Email))
+		for _, result := range results {
+			bar.Add(1)
+			result.Name = strings.TrimSpace(result.Name)
+			result.Email = strings.ToLower(strings.TrimSpace(result.Email))
 
-				if email.IsEmail(&result.Email) {
-					batchInsert = append(batchInsert, result)
-				}
+			if email.IsEmail(&result.Email) {
+				batchInsert = append(batchInsert, result)
 			}
-
-			if len(batchInsert) > 0 {
-				s.database.GetEntityManager().GetGormORM().CreateInBatches(batchInsert, 100)
-			}
-		}(results)
+		}
 
 		return nil
 	})
 
-	wg.Wait()
+	if len(batchInsert) > 0 {
+		s.database.GetEntityManager().GetGormORM().CreateInBatches(batchInsert, 100)
+	}
 }
 
 func (s *Sync) getDifference() []email.Cache {
