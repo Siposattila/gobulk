@@ -29,8 +29,8 @@ func (e *Email) verifyEmail() bool {
 	}
 	defer client.Close()
 
-	client.Hello("localhost")     // TODO: needs real domain
-	client.Mail("me@example.com") // TODO: needs real email
+	client.Hello("gobulk.com")
+	client.Mail("info@gobulk.com")
 	rcptErr := client.Rcpt(e.Email)
 	client.Quit()
 

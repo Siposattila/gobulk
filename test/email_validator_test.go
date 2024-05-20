@@ -23,3 +23,21 @@ func TestValidatorOnBadEmail(t *testing.T) {
 		t.Fatalf("e.Valid should not be true on iepwhfepwifhewipfeh@gmail.com")
 	}
 }
+
+func TestValidatorOnGmail(t *testing.T) {
+	e := email.Email{Email: "gobulk189@gmail.com"}
+	e.ValidateEmail()
+
+	if e.Valid == email.EMAIL_INVALID {
+		t.Fatalf("e.Valid should be true on gobulk189@gmail.com")
+	}
+}
+
+func TestValidatorOnFreemail(t *testing.T) {
+	e := email.Email{Email: "gobulk@fremail.hu"}
+	e.ValidateEmail()
+
+	if e.Valid == email.EMAIL_INVALID {
+		t.Fatalf("e.Valid should be true on gobulk@fremail.hu")
+	}
+}
