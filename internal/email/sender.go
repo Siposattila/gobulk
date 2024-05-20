@@ -16,29 +16,29 @@ type ClientInterface interface {
 }
 
 type EmailBody struct {
-	Subject     *string
-	Greeting    *string
-	Message     *string
-	Farewell    *string
-	Company     *string
-	Unsubscribe *string
+	Subject     string
+	Greeting    string
+	Message     string
+	Farewell    string
+	Company     string
+	Unsubscribe string
 }
 
 type client struct {
 	Auth  *smtp.Auth
-	Host  *string
-	Port  *string
-	Email *string
+	Host  string
+	Port  string
+	Email string
 	Body  *EmailBody
 }
 
-func NewClient(dsn *string, body *EmailBody) ClientInterface {
-	match, _ := regexp.MatchString(`^smtp:\/\/[^:]+:[^@]+@[^:]+:\d+$`, *dsn)
+func NewClient(dsn string, body *EmailBody) ClientInterface {
+	match, _ := regexp.MatchString(`^smtp:\/\/[^:]+:[^@]+@[^:]+:\d+$`, dsn)
 	if !match {
 		console.Fatal("Bad email DSN!")
 	}
 
-	helper := *dsn
+	helper := dsn
 	helper = helper[strings.LastIndex(helper, "smtp://")+7:]
 	from := helper[:strings.Index(helper, ":")]
 	password := helper[strings.Index(helper, ":")+1 : strings.LastIndex(helper, "@")]
@@ -49,9 +49,9 @@ func NewClient(dsn *string, body *EmailBody) ClientInterface {
 
 	return &client{
 		Auth:  &auth,
-		Host:  &host,
-		Port:  &port,
-		Email: &from,
+		Host:  host,
+		Port:  port,
+		Email: from,
 		Body:  body,
 	}
 }
@@ -65,13 +65,13 @@ func (c *client) Send(e *Email) {
 	emailBody := c.Body
 	var body bytes.Buffer
 	mimeHeaders := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
-	body.Write([]byte(fmt.Sprintf("Subject: %s \nFrom: %s \nTo: %s \n%s\n\n", *c.Body.Subject, *c.Email, e.Email, mimeHeaders)))
+	body.Write([]byte(fmt.Sprintf("Subject: %s \nFrom: %s \nTo: %s \n%s\n\n", c.Body.Subject, c.Email, e.Email, mimeHeaders)))
 
-	*emailBody.Unsubscribe = *c.Body.Unsubscribe + "/" + e.Email
-	*emailBody.Greeting = strings.ReplaceAll(*c.Body.Greeting, "[name]", e.Name)
+	emailBody.Unsubscribe = c.Body.Unsubscribe + "/" + e.Email
+	emailBody.Greeting = strings.ReplaceAll(c.Body.Greeting, "[name]", e.Name)
 	template.Execute(&body, c.Body)
 
-	err := smtp.SendMail(*c.Host+":"+*c.Port, *c.Auth, *c.Email, []string{e.Email}, body.Bytes())
+	err := smtp.SendMail(c.Host+":"+c.Port, *c.Auth, c.Email, []string{e.Email}, body.Bytes())
 	if err != nil {
 		console.Fatal("An error occured during email sending: " + err.Error())
 	}

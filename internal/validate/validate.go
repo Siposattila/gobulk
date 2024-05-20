@@ -5,20 +5,18 @@ import (
 
 	"github.com/Siposattila/gobulk/internal/console"
 	"github.com/Siposattila/gobulk/internal/email"
-	"github.com/Siposattila/gobulk/internal/gorm"
-	g "gorm.io/gorm"
+	"github.com/Siposattila/gobulk/internal/interfaces"
+	"gorm.io/gorm"
 )
 
 type Validate struct {
-	EM *gorm.EntityManager
+	database interfaces.DatabaseInterface
 }
 
-func Init() *Validate {
-	validate := Validate{
-		EM: gorm.Gorm(),
+func Init(database interfaces.DatabaseInterface) *Validate {
+	return &Validate{
+		database: database,
 	}
-
-	return &validate
 }
 
 func (v *Validate) Start() {
@@ -31,22 +29,22 @@ func (v *Validate) Start() {
 	}
 
 	var results []email.Email
-	v.EM.GormORM.Where(
+	v.database.GetEntityManager().GetGormORM().Where(
 		"valid = ? AND status = ?",
 		email.EMAIL_INVALID,
 		email.EMAIL_STATUS_ACTIVE,
-	).Offset(offset).FindInBatches(&results, 100, func(tx *g.DB, batch int) error {
+	).Offset(offset).FindInBatches(&results, 100, func(tx *gorm.DB, batch int) error {
 		for _, result := range results {
 			select {
 			case <-email.ShutdownChan:
 				last := email.NewLast(&result.ID, email.LAST_PROCESS_VALIDATE)
-				v.EM.GormORM.Create(last)
+				v.database.GetEntityManager().GetGormORM().Create(last)
 				console.Warning("Unexpected shutdown while validating emails. Saving last progress...")
 
 				os.Exit(1)
 			default:
 				result.ValidateEmail()
-				v.EM.GormORM.Save(&result)
+				v.database.GetEntityManager().GetGormORM().Save(&result)
 
 				if result.Valid == email.EMAIL_INVALID {
 					console.Warning("Email " + result.Email + " is not valid")
@@ -65,10 +63,10 @@ func (v *Validate) Start() {
 // FIXME: code dup (bulk.go)
 func (v *Validate) getLast() *email.Last {
 	var last email.Last
-	tx := v.EM.GormORM.First(&last, "process_id = ?", email.LAST_PROCESS_VALIDATE)
+	tx := v.database.GetEntityManager().GetGormORM().First(&last, "process_id = ?", email.LAST_PROCESS_VALIDATE)
 
 	if tx.Error == nil {
-		v.EM.GormORM.Delete(last)
+		v.database.GetEntityManager().GetGormORM().Delete(last)
 	}
 
 	return &last

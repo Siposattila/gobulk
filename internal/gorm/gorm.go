@@ -2,32 +2,57 @@ package gorm
 
 import (
 	"regexp"
+	"sync"
 
 	"github.com/Siposattila/gobulk/internal/config"
 	"github.com/Siposattila/gobulk/internal/console"
 	"github.com/Siposattila/gobulk/internal/email"
+	"github.com/Siposattila/gobulk/internal/interfaces"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
 
+var db *Database = &Database{}
+
+type Database struct {
+	EM             interfaces.EntityManagerInterface
+	MEM            interfaces.EntityManagerInterface
+	init           sync.Once
+	configProvider interfaces.ConfigProviderInterface
+}
+
+type DatabaseProvider struct{}
+
 type EntityManager struct {
 	GormORM *gorm.DB
 }
 
-func Gorm() *EntityManager {
+func (d *Database) GetEntityManager() interfaces.EntityManagerInterface      { return d.EM }
+func (d *Database) GetMysqlEntityManager() interfaces.EntityManagerInterface { return d.MEM }
+
+func (dp *DatabaseProvider) GetDatabase(configProvider interfaces.ConfigProviderInterface) interfaces.DatabaseInterface {
+	db.init.Do(func() { ctor(configProvider) })
+
+	return db
+}
+
+func (em *EntityManager) GetGormORM() *gorm.DB { return em.GormORM }
+
+func ctor(configProvider interfaces.ConfigProviderInterface) {
+	db.configProvider = configProvider
+	db.gorm()
+}
+
+func (d *Database) gorm() {
 	database, error := gorm.Open(sqlite.Open("gobulk.db"), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
 	if error != nil {
 		console.Fatal("Fatal error during connecting to database: " + error.Error())
 	}
-	console.Success("Connection to database was successful.")
-
-	em := &EntityManager{
-		GormORM: database,
-	}
+	console.Success("Connection to the local database was successful.")
 
 	err := database.AutoMigrate(
 		&config.Config{},
@@ -39,63 +64,28 @@ func Gorm() *EntityManager {
 		console.Fatal("Fatal error during migration: " + err.Error())
 	}
 
-	createBasicConfiguration(em.GormORM)
+	d.EM = &EntityManager{
+		GormORM: database,
+	}
 
-	return em
+	d.gormExternal(d.configProvider.GetConfig(db).GetMysqlDSN())
 }
 
-func GormExternal(dsn *string) *EntityManager {
-	match, _ := regexp.MatchString(`^[^:]+:[^@]+@tcp\([^:]+\:\d+\)\/[^?]+\?.*$`, *dsn)
+func (d *Database) gormExternal(dsn string) {
+	match, _ := regexp.MatchString(`^[^:]+:[^@]+@tcp\([^:]+\:\d+\)\/[^?]+\?.*$`, dsn)
 	if !match {
 		console.Fatal("Bad mysql DSN!")
 	}
 
-	database, error := gorm.Open(mysql.Open(*dsn), &gorm.Config{
+	database, error := gorm.Open(mysql.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
 	if error != nil {
 		console.Fatal("Fatal error during connecting to database: " + error.Error())
 	}
-	console.Success("Connection to database was successful.")
+	console.Success("Connection to the mysql database was successful.")
 
-	em := &EntityManager{
+	d.MEM = &EntityManager{
 		GormORM: database,
-	}
-
-	return em
-}
-
-func GetConfig(g *gorm.DB) *config.Config {
-	if g == nil {
-		console.Fatal("You need to connect to the database first!")
-	}
-
-	var conf config.Config
-	result := g.First(&conf)
-	if result.RowsAffected != 1 {
-		console.Fatal("Something went wrong when getting config!")
-	}
-
-	return &conf
-}
-
-func createBasicConfiguration(g *gorm.DB) {
-	var conf config.Config
-	var result = g.First(&conf)
-
-	if result.RowsAffected != 1 {
-		conf = config.Config{
-			MysqlDSN:            "root:123456@tcp(localhost:3306)/xy?charset=utf8mb4&parseTime=True&loc=Local",
-			SyncCron:            "0 0 * * *",
-			EmailDSN:            "smtp://user:pass@localhost:1025",
-			SendDelay:           4615,
-			MysqlQuery:          "SELECT DISTINCT email, name FROM users;",
-			CompanyName:         "GoBulk",
-			HttpServerPort:      "2000",
-			UnsubscribeEndpoint: "http://localhost:2000/unsub",
-			ResubscribeEndpoint: "http://localhost:2000/resub",
-		}
-		g.Create(conf)
-		console.Fatal("Configuration was not found! Basic configuration was created in the local db.")
 	}
 }

@@ -7,7 +7,7 @@ import (
 
 	"github.com/Siposattila/gobulk/internal/console"
 	"github.com/Siposattila/gobulk/internal/email"
-	g "gorm.io/gorm"
+	"gorm.io/gorm"
 )
 
 func (b *Bulk) unsubscribe(w http.ResponseWriter, r *http.Request) {
@@ -21,8 +21,8 @@ func (b *Bulk) unsubscribe(w http.ResponseWriter, r *http.Request) {
 	console.Normal(mail + " is unsubscribing.")
 
 	var e email.Email
-	tx := b.EM.GormORM.First(&e, "email = ? AND status = ?", mail, email.EMAIL_STATUS_ACTIVE)
-	if tx.Error != nil && tx.Error == g.ErrRecordNotFound {
+	tx := b.database.GetEntityManager().GetGormORM().First(&e, "email = ? AND status = ?", mail, email.EMAIL_STATUS_ACTIVE)
+	if tx.Error != nil && tx.Error == gorm.ErrRecordNotFound {
 		console.Warning("The given email was not found or its not active: " + mail)
 
 		http.Error(w, "Not found the given email "+mail, http.StatusNotFound)
@@ -31,7 +31,7 @@ func (b *Bulk) unsubscribe(w http.ResponseWriter, r *http.Request) {
 	}
 
 	e.Status = email.EMAIL_STATUS_UNSUBSCRIBED
-	b.EM.GormORM.Save(e)
+	b.database.GetEntityManager().GetGormORM().Save(e)
 
 	template, error := template.ParseFiles("unsub.html")
 	if error != nil {
@@ -45,8 +45,8 @@ func (b *Bulk) unsubscribe(w http.ResponseWriter, r *http.Request) {
 		Resubscribe string
 	}{
 		Message:     "We are very sorry to see you go! 😞",
-		Company:     b.Config.CompanyName,
-		Resubscribe: b.Config.ResubscribeEndpoint + "/" + e.Email,
+		Company:     b.config.GetCompanyName(),
+		Resubscribe: b.config.GetResubscribeEndpoint() + "/" + e.Email,
 	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -64,8 +64,8 @@ func (b *Bulk) resubscribe(w http.ResponseWriter, r *http.Request) {
 	console.Normal(mail + " is resubscribing.")
 
 	var e email.Email
-	tx := b.EM.GormORM.First(&e, "email = ? AND status = ?", mail, email.EMAIL_STATUS_UNSUBSCRIBED)
-	if tx.Error != nil && tx.Error == g.ErrRecordNotFound {
+	tx := b.database.GetEntityManager().GetGormORM().First(&e, "email = ? AND status = ?", mail, email.EMAIL_STATUS_UNSUBSCRIBED)
+	if tx.Error != nil && tx.Error == gorm.ErrRecordNotFound {
 		console.Warning("The given email was not found or its not unsubscribed: " + mail)
 
 		http.Error(w, "Not found the given email "+mail, http.StatusNotFound)
@@ -74,7 +74,7 @@ func (b *Bulk) resubscribe(w http.ResponseWriter, r *http.Request) {
 	}
 
 	e.Status = email.EMAIL_STATUS_ACTIVE
-	b.EM.GormORM.Save(e)
+	b.database.GetEntityManager().GetGormORM().Save(e)
 
 	template, error := template.ParseFiles("resub.html")
 	if error != nil {
@@ -87,7 +87,7 @@ func (b *Bulk) resubscribe(w http.ResponseWriter, r *http.Request) {
 		Company string
 	}{
 		Message: "Welcome back! 🥳",
-		Company: b.Config.CompanyName,
+		Company: b.config.GetCompanyName(),
 	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -100,10 +100,10 @@ func (b *Bulk) HttpServer() {
 	router.HandleFunc("GET /resub/{email}", b.resubscribe)
 
 	server := http.Server{
-		Addr:    ":" + b.Config.HttpServerPort,
+		Addr:    ":" + b.config.GetHttpServerPort(),
 		Handler: router,
 	}
 
-	console.Normal("Http server is listening on port :" + b.Config.HttpServerPort)
+	console.Normal("Http server is listening on port :" + b.config.GetHttpServerPort())
 	server.ListenAndServe()
 }

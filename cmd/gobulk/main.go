@@ -4,7 +4,9 @@ import (
 	"flag"
 
 	"github.com/Siposattila/gobulk/internal/bulk"
+	"github.com/Siposattila/gobulk/internal/config"
 	"github.com/Siposattila/gobulk/internal/email"
+	"github.com/Siposattila/gobulk/internal/gorm"
 	"github.com/Siposattila/gobulk/internal/sync"
 	"github.com/Siposattila/gobulk/internal/validate"
 )
@@ -28,29 +30,33 @@ func main() {
 	flag.Parse()
 
 	email.ListenForKill()
+	var configProvider config.ConfigProvider
+	var databaseProvider gorm.DatabaseProvider
+	database := databaseProvider.GetDatabase(&configProvider)
+	config := configProvider.GetConfig(nil)
 
 	if isFlagPassed("sync") {
 		if isFlagPassed("server") {
-			server := bulk.InitForServer()
+			server := bulk.InitForServer(database, config)
 			go server.HttpServer()
 		}
 
-		sync := sync.Init()
+		sync := sync.Init(database, config)
 		sync.Start()
 	}
 
 	if isFlagPassed("server") && !isFlagPassed("sync") {
-		server := bulk.InitForServer()
+		server := bulk.InitForServer(database, config)
 		server.HttpServer()
 	}
 
 	if isFlagPassed("validate") && (!isFlagPassed("sync") && !isFlagPassed("server")) {
-		validate := validate.Init()
+		validate := validate.Init(database)
 		validate.Start()
 	}
 
 	if isFlagPassed("bulk") && (!isFlagPassed("sync") && !isFlagPassed("server")) {
-		bulk := bulk.Init()
+		bulk := bulk.Init(database, config)
 		bulk.Start()
 	}
 
