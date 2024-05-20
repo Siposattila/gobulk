@@ -78,7 +78,7 @@ func InitForServer(database interfaces.DatabaseInterface, config interfaces.Conf
 func (b *Bulk) Start() {
 	console.Normal("Bulk email sending is starting now. This may take a long time!!!")
 
-	last := b.getLast()
+	last := email.GetLast(b.database, email.LAST_PROCESS_SEND)
 	offset := 0
 	if last != nil {
 		offset = int(last.Offset)
@@ -107,16 +107,4 @@ func (b *Bulk) Start() {
 		return nil
 	})
 	console.Success("Bulk email sending is done!")
-}
-
-// FIXME: code dup (validate.go)
-func (b *Bulk) getLast() *email.Last {
-	var last email.Last
-	tx := b.database.GetEntityManager().GetGormORM().First(&last, "process_id = ?", email.LAST_PROCESS_SEND)
-
-	if tx.Error == nil {
-		b.database.GetEntityManager().GetGormORM().Delete(last)
-	}
-
-	return &last
 }

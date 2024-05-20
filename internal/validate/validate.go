@@ -23,7 +23,7 @@ func Init(database interfaces.DatabaseInterface) *Validate {
 func (v *Validate) Start() {
 	console.Normal("Validation is started. This may take a long time!!!")
 
-	last := v.getLast()
+	last := email.GetLast(v.database, email.LAST_PROCESS_VALIDATE)
 	offset := 0
 	if last != nil {
 		offset = int(last.Offset)
@@ -59,16 +59,4 @@ func (v *Validate) Start() {
 		return nil
 	})
 	console.Success("Validation finished successfully!")
-}
-
-// FIXME: code dup (bulk.go)
-func (v *Validate) getLast() *email.Last {
-	var last email.Last
-	tx := v.database.GetEntityManager().GetGormORM().First(&last, "process_id = ?", email.LAST_PROCESS_VALIDATE)
-
-	if tx.Error != gorm.ErrRecordNotFound {
-		v.database.GetEntityManager().GetGormORM().Delete(last, "process_id = ?", email.LAST_PROCESS_VALIDATE)
-	}
-
-	return &last
 }
