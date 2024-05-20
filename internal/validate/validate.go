@@ -26,24 +26,24 @@ func (v *Validate) Start() {
 	last := v.getLast()
 	offset := 0
 	if last != nil {
-		offset = int(last.Offset) - 1
+		offset = int(last.Offset)
 	}
 
 	var results []email.Email
 	v.database.GetEntityManager().GetGormORM().Where(
-		"valid = ? AND status = ?",
-		email.EMAIL_INVALID,
+		"status = ?",
 		email.EMAIL_STATUS_ACTIVE,
 	).Offset(offset).FindInBatches(&results, 100, func(tx *gorm.DB, batch int) error {
 		for _, result := range results {
 			select {
 			case <-kill.KillCtx.Done():
-				last := email.NewLast(&tx.RowsAffected, email.LAST_PROCESS_VALIDATE)
+				last := email.NewLast(int64(offset), email.LAST_PROCESS_VALIDATE)
 				v.database.GetEntityManager().GetGormORM().Create(last)
 				console.Warning("Unexpected shutdown while validating emails. Saving last progress...")
 
 				os.Exit(1)
 			default:
+				offset += 1
 				result.ValidateEmail()
 				v.database.GetEntityManager().GetGormORM().Save(&result)
 
@@ -66,8 +66,8 @@ func (v *Validate) getLast() *email.Last {
 	var last email.Last
 	tx := v.database.GetEntityManager().GetGormORM().First(&last, "process_id = ?", email.LAST_PROCESS_VALIDATE)
 
-	if tx.Error == nil {
-		v.database.GetEntityManager().GetGormORM().Delete(last)
+	if tx.Error != gorm.ErrRecordNotFound {
+		v.database.GetEntityManager().GetGormORM().Delete(last, "process_id = ?", email.LAST_PROCESS_VALIDATE)
 	}
 
 	return &last

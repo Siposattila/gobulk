@@ -10,9 +10,9 @@ type Last struct {
 	ProcessID uint8
 }
 
-func NewLast(offset *int64, processId uint8) *Last {
+func NewLast(offset int64, processId uint8) *Last {
 	return &Last{
-		Offset:    *offset,
+		Offset:    offset,
 		ProcessID: processId,
 	}
 }

@@ -81,7 +81,7 @@ func (b *Bulk) Start() {
 	last := b.getLast()
 	offset := 0
 	if last != nil {
-		offset = int(last.Offset) - 1
+		offset = int(last.Offset)
 	}
 
 	var results []email.Email
@@ -93,10 +93,11 @@ func (b *Bulk) Start() {
 		for _, result := range results {
 			select {
 			case <-kill.KillCtx.Done():
-				last := email.NewLast(&tx.RowsAffected, email.LAST_PROCESS_SEND)
+				last := email.NewLast(int64(offset), email.LAST_PROCESS_SEND)
 				b.database.GetEntityManager().GetGormORM().Create(last)
 				console.Warning("Unexpected shutdown while sending emails. Saving last progress...")
 			default:
+				offset += 1
 				time.Sleep(time.Duration(b.config.GetSendDelay()) * time.Millisecond)
 				b.emailClient.Send(&result)
 			}
