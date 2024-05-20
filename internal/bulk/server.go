@@ -1,12 +1,14 @@
 package bulk
 
 import (
+	"context"
 	"net/http"
 	"strings"
 	"text/template"
 
 	"github.com/Siposattila/gobulk/internal/console"
 	"github.com/Siposattila/gobulk/internal/email"
+	"github.com/Siposattila/gobulk/internal/kill"
 	"gorm.io/gorm"
 )
 
@@ -105,5 +107,11 @@ func (b *Bulk) HttpServer() {
 	}
 
 	console.Normal("Http server is listening on port :" + b.config.GetHttpServerPort())
+
+	go func() {
+		<-kill.KillCtx.Done()
+		console.Warning("Shutdown signal received shutting down http server.")
+		server.Shutdown(context.Background())
+	}()
 	server.ListenAndServe()
 }

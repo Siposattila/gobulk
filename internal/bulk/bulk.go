@@ -10,6 +10,7 @@ import (
 	"github.com/Siposattila/gobulk/internal/console"
 	"github.com/Siposattila/gobulk/internal/email"
 	"github.com/Siposattila/gobulk/internal/interfaces"
+	"github.com/Siposattila/gobulk/internal/kill"
 	"gorm.io/gorm"
 )
 
@@ -80,7 +81,7 @@ func (b *Bulk) Start() {
 	last := b.getLast()
 	offset := 0
 	if last != nil {
-		offset = int(last.EmailID) - 1
+		offset = int(last.Offset) - 1
 	}
 
 	var results []email.Email
@@ -91,12 +92,10 @@ func (b *Bulk) Start() {
 	).Offset(offset).FindInBatches(&results, (60*1000/int(b.config.GetSendDelay()))*2, func(tx *gorm.DB, batch int) error {
 		for _, result := range results {
 			select {
-			case <-email.ShutdownChan:
-				last := email.NewLast(&result.ID, email.LAST_PROCESS_SEND)
+			case <-kill.KillCtx.Done():
+				last := email.NewLast(&tx.RowsAffected, email.LAST_PROCESS_SEND)
 				b.database.GetEntityManager().GetGormORM().Create(last)
 				console.Warning("Unexpected shutdown while sending emails. Saving last progress...")
-
-				os.Exit(1)
 			default:
 				time.Sleep(time.Duration(b.config.GetSendDelay()) * time.Millisecond)
 				b.emailClient.Send(&result)

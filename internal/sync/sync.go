@@ -1,7 +1,6 @@
 package sync
 
 import (
-	"os"
 	"strings"
 	"sync"
 	"time"
@@ -9,6 +8,7 @@ import (
 	"github.com/Siposattila/gobulk/internal/console"
 	"github.com/Siposattila/gobulk/internal/email"
 	"github.com/Siposattila/gobulk/internal/interfaces"
+	"github.com/Siposattila/gobulk/internal/kill"
 	"github.com/robfig/cron/v3"
 	"github.com/schollz/progressbar/v3"
 	"gorm.io/gorm"
@@ -47,9 +47,8 @@ func (s *Sync) syncProcess() {
 	case <-timeSignal:
 		s.sync()
 		s.syncProcess()
-	case <-email.ShutdownChan:
-		console.Normal("Stopping sync process...")
-		os.Exit(1)
+	case <-kill.KillCtx.Done():
+		console.Warning("Shutdown signal received shutting down sync process.")
 	}
 }
 

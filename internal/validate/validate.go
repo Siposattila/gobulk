@@ -6,6 +6,7 @@ import (
 	"github.com/Siposattila/gobulk/internal/console"
 	"github.com/Siposattila/gobulk/internal/email"
 	"github.com/Siposattila/gobulk/internal/interfaces"
+	"github.com/Siposattila/gobulk/internal/kill"
 	"gorm.io/gorm"
 )
 
@@ -25,7 +26,7 @@ func (v *Validate) Start() {
 	last := v.getLast()
 	offset := 0
 	if last != nil {
-		offset = int(last.EmailID) - 1
+		offset = int(last.Offset) - 1
 	}
 
 	var results []email.Email
@@ -36,8 +37,8 @@ func (v *Validate) Start() {
 	).Offset(offset).FindInBatches(&results, 100, func(tx *gorm.DB, batch int) error {
 		for _, result := range results {
 			select {
-			case <-email.ShutdownChan:
-				last := email.NewLast(&result.ID, email.LAST_PROCESS_VALIDATE)
+			case <-kill.KillCtx.Done():
+				last := email.NewLast(&tx.RowsAffected, email.LAST_PROCESS_VALIDATE)
 				v.database.GetEntityManager().GetGormORM().Create(last)
 				console.Warning("Unexpected shutdown while validating emails. Saving last progress...")
 

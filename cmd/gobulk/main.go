@@ -5,8 +5,8 @@ import (
 
 	"github.com/Siposattila/gobulk/internal/bulk"
 	"github.com/Siposattila/gobulk/internal/config"
-	"github.com/Siposattila/gobulk/internal/email"
 	"github.com/Siposattila/gobulk/internal/gorm"
+	"github.com/Siposattila/gobulk/internal/kill"
 	"github.com/Siposattila/gobulk/internal/sync"
 	"github.com/Siposattila/gobulk/internal/validate"
 )
@@ -29,7 +29,7 @@ func main() {
 
 	flag.Parse()
 
-	email.ListenForKill()
+	kill.ListenForKill()
 	var configProvider config.ConfigProvider
 	var databaseProvider gorm.DatabaseProvider
 	database := databaseProvider.GetDatabase(&configProvider)
