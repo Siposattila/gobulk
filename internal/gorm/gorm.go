@@ -2,6 +2,7 @@ package gorm
 
 import (
 	"regexp"
+	"strings"
 	"sync"
 
 	"github.com/Siposattila/gobulk/internal/config"
@@ -17,10 +18,11 @@ import (
 var db *Database = &Database{}
 
 type Database struct {
-	EM             interfaces.EntityManagerInterface
-	MEM            interfaces.EntityManagerInterface
-	init           sync.Once
-	configProvider interfaces.ConfigProviderInterface
+	em                interfaces.EntityManagerInterface
+	mem               interfaces.EntityManagerInterface
+	mysqlDatabaseName string
+	init              sync.Once
+	configProvider    interfaces.ConfigProviderInterface
 }
 
 type DatabaseProvider struct{}
@@ -29,8 +31,9 @@ type EntityManager struct {
 	GormORM *gorm.DB
 }
 
-func (d *Database) GetEntityManager() interfaces.EntityManagerInterface      { return d.EM }
-func (d *Database) GetMysqlEntityManager() interfaces.EntityManagerInterface { return d.MEM }
+func (d *Database) GetEntityManager() interfaces.EntityManagerInterface      { return d.em }
+func (d *Database) GetMysqlEntityManager() interfaces.EntityManagerInterface { return d.mem }
+func (d *Database) GetMysqlDatabaseName() string                             { return d.mysqlDatabaseName }
 
 func (dp *DatabaseProvider) GetDatabase(configProvider interfaces.ConfigProviderInterface) interfaces.DatabaseInterface {
 	db.init.Do(func() { ctor(configProvider) })
@@ -64,7 +67,7 @@ func (d *Database) gorm() {
 		console.Fatal("Fatal error during migration: " + err.Error())
 	}
 
-	d.EM = &EntityManager{
+	d.em = &EntityManager{
 		GormORM: database,
 	}
 
@@ -77,6 +80,8 @@ func (d *Database) gormExternal(dsn string) {
 		console.Fatal("Bad mysql DSN!")
 	}
 
+	d.mysqlDatabaseName = dsn[strings.Index(dsn, "/")+1 : strings.Index(dsn, "?")]
+
 	database, error := gorm.Open(mysql.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
@@ -85,7 +90,7 @@ func (d *Database) gormExternal(dsn string) {
 	}
 	console.Success("Connection to the mysql database was successful.")
 
-	d.MEM = &EntityManager{
+	d.mem = &EntityManager{
 		GormORM: database,
 	}
 }
