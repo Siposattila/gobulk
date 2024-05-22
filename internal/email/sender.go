@@ -75,5 +75,5 @@ func (c *client) Send(e *Email) {
 	if err != nil {
 		console.Fatal("An error occured during email sending: " + err.Error())
 	}
-	console.Success("Email sent to " + e.Email)
+	e.SendStatus = EMAIL_SEND_STATUS_SENT
 }

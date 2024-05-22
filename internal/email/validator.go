@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func (e *Email) verifyEmail() bool {
+func (e *Email) verifyEmail() uint8 {
 	domain := e.Email[strings.LastIndex(e.Email, "@")+1:]
 
 	mxRecords, err := net.LookupMX(domain)

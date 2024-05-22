@@ -61,7 +61,6 @@ func (d *Database) gorm() {
 		&config.Config{},
 		&email.Cache{},
 		&email.Email{},
-		&email.Last{},
 	)
 	if err != nil {
 		console.Fatal("Fatal error during migration: " + err.Error())

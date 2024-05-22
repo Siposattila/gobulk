@@ -11,6 +11,7 @@ import (
 	"github.com/Siposattila/gobulk/internal/email"
 	"github.com/Siposattila/gobulk/internal/interfaces"
 	"github.com/Siposattila/gobulk/internal/kill"
+	"github.com/schollz/progressbar/v3"
 	"gorm.io/gorm"
 )
 
@@ -78,33 +79,41 @@ func InitForServer(database interfaces.DatabaseInterface, config interfaces.Conf
 func (b *Bulk) Start() {
 	console.Normal("Bulk email sending is starting now. This may take a long time!!!")
 
-	last := email.GetLast(b.database, email.LAST_PROCESS_SEND)
-	offset := 0
-	if last != nil {
-		offset = int(last.Offset)
-	}
+	var (
+		emails []email.Email
+		total  int64
+	)
+	b.database.GetEntityManager().GetGormORM().Find(
+		&email.Email{},
+		"valid = ? AND status = ? AND send_status = ?",
+		email.EMAIL_VALID,
+		email.EMAIL_STATUS_ACTIVE,
+		email.EMAIL_SEND_STATUS_NOT_SENT,
+	).Count(&total)
+	bar := progressbar.Default(total)
 
-	var results []email.Email
 	b.database.GetEntityManager().GetGormORM().Where(
 		"valid = ? AND status = ?",
 		email.EMAIL_VALID,
 		email.EMAIL_STATUS_ACTIVE,
-	).Offset(offset).FindInBatches(&results, (60*1000/int(b.config.GetSendDelay()))*2, func(tx *gorm.DB, batch int) error {
-		for _, result := range results {
+	).FindInBatches(&emails, (60*1000/int(b.config.GetSendDelay()))*2, func(tx *gorm.DB, batch int) error {
+		for _, mail := range emails {
+			bar.Add(1)
 			select {
 			case <-kill.KillCtx.Done():
-				last := email.NewLast(int64(offset), email.LAST_PROCESS_SEND)
-				b.database.GetEntityManager().GetGormORM().Create(last)
-				console.Warning("Unexpected shutdown while sending emails. Saving last progress...")
+				console.Warning("Unexpected shutdown while sending emails.")
+
+				os.Exit(1)
 			default:
-				offset += 1
 				time.Sleep(time.Duration(b.config.GetSendDelay()) * time.Millisecond)
-				b.emailClient.Send(&result)
+				b.emailClient.Send(&mail)
+				b.database.GetEntityManager().GetGormORM().Save(mail)
 			}
 		}
 
 		// Returning an error will stop further batch processing
 		return nil
 	})
+
 	console.Success("Bulk email sending is done!")
 }

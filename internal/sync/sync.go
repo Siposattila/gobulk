@@ -61,25 +61,31 @@ func (s *Sync) sync() {
 	)
 	s.database.GetEntityManager().GetGormORM().Find(&email.Cache{}).Count(&total)
 
-	bar := progressbar.Default(total)
-	for _, d := range diff {
-		bar.Add(1)
-		var e email.Email
-		tx := s.database.GetEntityManager().GetGormORM().First(&e, "name = ? AND email = ?", d.Name, d.Email)
-		if tx.Error != nil {
-			if tx.Error == gorm.ErrRecordNotFound {
-				batchInsert = append(batchInsert, email.Email{Name: d.Name, Email: d.Email})
-			} else {
-				console.Error("Error executing query: %v", tx.Error)
-			}
-		} else {
-			e.Status = email.EMAIL_STATUS_INACTIVE
-			s.database.GetEntityManager().GetGormORM().Save(e)
-		}
-	}
+	console.Warning("Synchronizing local database!")
+	if len(diff) > 0 {
+		bar := progressbar.Default(total)
 
-	if len(batchInsert) > 0 {
-		s.database.GetEntityManager().GetGormORM().CreateInBatches(batchInsert, 100)
+		for _, d := range diff {
+			bar.Add(1)
+			var e email.Email
+			tx := s.database.GetEntityManager().GetGormORM().First(&e, "name = ? AND email = ?", d.Name, d.Email)
+			if tx.Error != nil {
+				if tx.Error == gorm.ErrRecordNotFound {
+					batchInsert = append(batchInsert, email.Email{Name: d.Name, Email: d.Email})
+				} else {
+					console.Error("Error executing query: %v", tx.Error)
+				}
+			} else {
+				e.Status = email.EMAIL_STATUS_INACTIVE
+				s.database.GetEntityManager().GetGormORM().Save(e)
+			}
+		}
+
+		if len(batchInsert) > 0 {
+			s.database.GetEntityManager().GetGormORM().CreateInBatches(batchInsert, 100)
+		}
+	} else {
+		console.Success("Already up to date!")
 	}
 
 	console.Success("Sync finished successfully!")
