@@ -17,9 +17,8 @@
 <body>
     <form id="richtext-form" action="/send" method="post">
         <div class="richtext-container">
-            <label for="editor1">Subject:</label>
-            <div id="editor1"></div>
-            <input type="hidden" name="subject" id="subject">
+            <label for="subject">Subject:</label>
+            <input type="text" name="subject" id="subject">
         </div>
         <div class="richtext-container">
             <label for="editor2">Greeting:</label>
@@ -48,13 +47,11 @@
         var options = {
             theme: 'snow'
         };
-        var editor1 = new Quill('#editor1', options);
         var editor2 = new Quill('#editor2', options);
         var editor3 = new Quill('#editor3', options);
         var editor4 = new Quill('#editor4', options);
 
         document.getElementById('richtext-form').onsubmit = function() {
-            document.getElementById('subject').value = editor1.root.innerHTML;
             document.getElementById('greeting').value = editor2.root.innerHTML;
             document.getElementById('message').value = editor3.root.innerHTML;
             document.getElementById('farewell').value = editor4.root.innerHTML;
