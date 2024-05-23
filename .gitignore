@@ -1,7 +1,9 @@
 cmd/gobulk/*
 !cmd/gobulk/main.go
 !cmd/gobulk/bulk.html
+!cmd/gobulk/email.html
 !cmd/gobulk/unsub.html
 !cmd/gobulk/resub.html
 .docker/db/*
 !.docker/db/base.sql
+gobulk.log

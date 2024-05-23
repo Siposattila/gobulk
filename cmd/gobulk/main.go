@@ -36,9 +36,9 @@ func main() {
 			app.Bulk.StartConsole()
 		}
 	} else {
-		go app.Sync.Start()
+		// go app.Sync.Start()
 		go app.Server.Run()
-		go app.Validation.Start()
+		// go app.Validation.Start()
 
 		<-kill.KillCtx.Done()
 		logger.Warning("Shutdown completed.")
