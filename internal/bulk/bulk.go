@@ -2,6 +2,7 @@ package bulk
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -103,7 +104,7 @@ func (b *Bulk) Start() {
 			case <-kill.KillCtx.Done():
 				console.Warning("Unexpected shutdown while sending emails.")
 
-				os.Exit(1)
+				return errors.New("Shutdown")
 			default:
 				time.Sleep(time.Duration(b.config.GetSendDelay()) * time.Millisecond)
 				b.emailClient.Send(&mail)

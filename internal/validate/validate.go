@@ -1,7 +1,7 @@
 package validate
 
 import (
-	"os"
+	"errors"
 
 	"github.com/Siposattila/gobulk/internal/console"
 	"github.com/Siposattila/gobulk/internal/email"
@@ -43,9 +43,10 @@ func (v *Validate) Start() {
 		for _, result := range results {
 			select {
 			case <-kill.KillCtx.Done():
+				master.Stop()
 				console.Warning("Unexpected shutdown while validating emails.")
 
-				os.Exit(1)
+				return errors.New("Shutdown")
 			default:
 				master.NewWork(func() {
 					result.ValidateEmail()
@@ -54,7 +55,6 @@ func (v *Validate) Start() {
 			}
 		}
 
-		// Returning an error will stop further batch processing
 		return nil
 	})
 	master.Wait()
