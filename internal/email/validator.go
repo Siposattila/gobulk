@@ -5,6 +5,8 @@ import (
 	"net/smtp"
 	"regexp"
 	"strings"
+
+	"github.com/Siposattila/gobulk/internal/interfaces"
 )
 
 func (e *Email) verifyEmail() uint8 {
@@ -12,14 +14,14 @@ func (e *Email) verifyEmail() uint8 {
 
 	mxRecords, err := net.LookupMX(domain)
 	if err != nil {
-		return EMAIL_INVALID
+		return interfaces.EMAIL_INVALID
 	}
 
 	mxHost := mxRecords[0].Host
 
 	client, err := smtp.Dial(mxHost + ":25")
 	if err != nil {
-		return EMAIL_INVALID
+		return interfaces.EMAIL_INVALID
 	}
 	defer client.Close()
 
@@ -29,10 +31,10 @@ func (e *Email) verifyEmail() uint8 {
 	client.Quit()
 
 	if rcptErr != nil {
-		return EMAIL_INVALID
+		return interfaces.EMAIL_INVALID
 	}
 
-	return EMAIL_VALID
+	return interfaces.EMAIL_VALID
 }
 
 func IsEmail(email *string) bool {

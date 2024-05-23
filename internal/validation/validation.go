@@ -1,27 +1,28 @@
-package validate
+package validation
 
 import (
 	"errors"
+	"strconv"
 
-	"github.com/Siposattila/gobulk/internal/console"
 	"github.com/Siposattila/gobulk/internal/email"
 	"github.com/Siposattila/gobulk/internal/interfaces"
 	"github.com/Siposattila/gobulk/internal/kill"
+	"github.com/Siposattila/gobulk/internal/logger"
 	"gorm.io/gorm"
 )
 
-type Validate struct {
+type validation struct {
 	database interfaces.DatabaseInterface
 }
 
-func Init(database interfaces.DatabaseInterface) *Validate {
-	return &Validate{
+func Init(database interfaces.DatabaseInterface) interfaces.ValidationInterface {
+	return &validation{
 		database: database,
 	}
 }
 
-func (v *Validate) Start() {
-	console.Normal("Validation is started. This may take a long time!")
+func (v *validation) Start() {
+	logger.Normal("Validation is started. This may take a long time!")
 
 	var (
 		results []email.Email
@@ -30,21 +31,22 @@ func (v *Validate) Start() {
 	v.database.GetEntityManager().GetGormORM().Find(
 		&email.Email{},
 		"status = ? AND valid = ?",
-		email.EMAIL_STATUS_ACTIVE, email.EMAIL_UNKNOWN,
+		interfaces.EMAIL_STATUS_ACTIVE, interfaces.EMAIL_UNKNOWN,
 	).Count(&total)
 
-	master := NewMaster(total, 5)
+	logger.Normal("Validating " + strconv.Itoa(int(total)) + " emails.")
+	master := newMaster(total, 5)
 	master.Start()
 
 	v.database.GetEntityManager().GetGormORM().Where(
 		"status = ? AND valid = ?",
-		email.EMAIL_STATUS_ACTIVE, email.EMAIL_UNKNOWN,
+		interfaces.EMAIL_STATUS_ACTIVE, interfaces.EMAIL_UNKNOWN,
 	).FindInBatches(&results, 100, func(tx *gorm.DB, batch int) error {
 		for _, result := range results {
 			select {
 			case <-kill.KillCtx.Done():
+				logger.Warning("Shutdown signal received shutting down validation process.")
 				master.Stop()
-				console.Warning("Shutdown signal received shutting down validation process.")
 
 				return errors.New("Shutdown")
 			default:
@@ -59,5 +61,5 @@ func (v *Validate) Start() {
 	})
 	master.Wait()
 
-	console.Success("Validation finished successfully!")
+	logger.Success("Validation finished successfully!")
 }

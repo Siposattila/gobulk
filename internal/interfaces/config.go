@@ -11,7 +11,3 @@ type ConfigInterface interface {
 	GetUnsubscribeEndpoint() string
 	GetResubscribeEndpoint() string
 }
-
-type ConfigProviderInterface interface {
-	GetConfig(database DatabaseInterface) ConfigInterface
-}

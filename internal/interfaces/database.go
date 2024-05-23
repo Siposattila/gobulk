@@ -8,10 +8,6 @@ type DatabaseInterface interface {
 	GetMysqlDatabaseName() string
 }
 
-type DatabaseProviderInterface interface {
-	GetDatabase(configProvider ConfigProviderInterface) DatabaseInterface
-}
-
 type EntityManagerInterface interface {
 	GetGormORM() *gorm.DB
 }

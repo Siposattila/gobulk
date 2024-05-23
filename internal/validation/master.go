@@ -1,8 +1,9 @@
-package validate
+package validation
 
 import (
 	"sync"
 
+	"github.com/Siposattila/gobulk/internal/logger"
 	"github.com/schollz/progressbar/v3"
 )
 
@@ -25,7 +26,7 @@ type work struct {
 	fn func()
 }
 
-func NewMaster(totalWork int64, maxWorkers int) MasterInterface {
+func newMaster(totalWork int64, maxWorkers int) MasterInterface {
 	return &master{
 		maxWorkers: maxWorkers,
 		pending:    make(chan *work),
@@ -45,6 +46,8 @@ func (m *master) worker() {
 	for {
 		select {
 		case <-m.stop:
+			logger.LogWarning("Stop signal received stopping worker.")
+
 			return
 		default:
 			w := <-m.pending
@@ -58,6 +61,7 @@ func (m *master) worker() {
 func (m *master) Start() {
 	for i := 0; i < m.maxWorkers; i++ {
 		go m.worker()
+		logger.LogSuccess("Worker started.")
 	}
 }
 

@@ -3,12 +3,12 @@ package config
 import (
 	"sync"
 
-	"github.com/Siposattila/gobulk/internal/console"
 	"github.com/Siposattila/gobulk/internal/interfaces"
+	"github.com/Siposattila/gobulk/internal/logger"
 	"gorm.io/gorm"
 )
 
-var conf *Config = &Config{}
+var instance *Config = &Config{}
 
 type Config struct {
 	MysqlDSN            string
@@ -23,8 +23,6 @@ type Config struct {
 	init                sync.Once
 }
 
-type ConfigProvider struct{}
-
 func (c *Config) GetMysqlDSN() string            { return c.MysqlDSN }
 func (c *Config) GetMysqlQuery() string          { return c.MysqlQuery }
 func (c *Config) GetEmailDSN() string            { return c.EmailDSN }
@@ -36,25 +34,25 @@ func (c *Config) GetUnsubscribeEndpoint() string { return c.UnsubscribeEndpoint 
 func (c *Config) GetResubscribeEndpoint() string { return c.ResubscribeEndpoint }
 
 func ctor(database interfaces.DatabaseInterface) {
-	tx := database.GetEntityManager().GetGormORM().First(conf)
+	tx := database.GetEntityManager().GetGormORM().First(instance)
 	if tx.Error == gorm.ErrRecordNotFound {
-		conf.MysqlDSN = "root:123456@tcp(localhost:3306)/xy?charset=utf8mb4&parseTime=True&loc=Local"
-		conf.SyncCron = "0 0 * * *"
-		conf.EmailDSN = "smtp://user:pass@localhost:1025"
-		conf.SendDelay = 1000
-		conf.MysqlQuery = "SELECT DISTINCT email, name FROM users;"
-		conf.CompanyName = "GoBulk"
-		conf.HttpServerPort = "2000"
-		conf.UnsubscribeEndpoint = "http://localhost:2000/unsub"
-		conf.ResubscribeEndpoint = "http://localhost:2000/resub"
+		instance.MysqlDSN = "root:123456@tcp(localhost:3306)/xy?charset=utf8mb4&parseTime=True&loc=Local"
+		instance.SyncCron = "0 0 * * *"
+		instance.EmailDSN = "smtp://user:pass@localhost:1025"
+		instance.SendDelay = 1000
+		instance.MysqlQuery = "SELECT DISTINCT email, name FROM users;"
+		instance.CompanyName = "GoBulk"
+		instance.HttpServerPort = "2000"
+		instance.UnsubscribeEndpoint = "http://localhost:2000/unsub"
+		instance.ResubscribeEndpoint = "http://localhost:2000/resub"
 
-		database.GetEntityManager().GetGormORM().Create(conf)
-		console.Fatal("Configuration was not found! Basic configuration was created in the local database.")
+		database.GetEntityManager().GetGormORM().Create(instance)
+		logger.Fatal("Configuration was not found! Basic configuration was created in the local database.")
 	}
 }
 
-func (cp *ConfigProvider) GetConfig(database interfaces.DatabaseInterface) interfaces.ConfigInterface {
-	conf.init.Do(func() { ctor(database) })
+func GetConfig(database interfaces.DatabaseInterface) interfaces.ConfigInterface {
+	instance.init.Do(func() { ctor(database) })
 
-	return conf
+	return instance
 }

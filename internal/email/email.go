@@ -2,19 +2,9 @@ package email
 
 import (
 	"time"
-)
 
-const (
-	EMAIL_STATUS_ACTIVE       = 1
-	EMAIL_STATUS_INACTIVE     = 2
-	EMAIL_STATUS_UNSUBSCRIBED = 3
-
-	EMAIL_SEND_STATUS_NOT_SENT = 1
-	EMAIL_SEND_STATUS_SENT     = 2
-
-	EMAIL_UNKNOWN = 1
-	EMAIL_VALID   = 2
-	EMAIL_INVALID = 3
+	"github.com/Siposattila/gobulk/internal/interfaces"
+	"github.com/Siposattila/gobulk/internal/logger"
 )
 
 type Email struct {
@@ -28,6 +18,15 @@ type Email struct {
 	UpdatedAt  time.Time
 }
 
+func (e *Email) GetEmail() string               { return e.Email }
+func (e *Email) GetName() string                { return e.Name }
+func (e *Email) GetStatus() uint8               { return e.Status }
+func (e *Email) SetStatus(status uint8)         { e.Status = status }
+func (e *Email) GetValid() uint8                { return e.Valid }
+func (e *Email) SetValid(valid uint8)           { e.Valid = valid }
+func (e *Email) GetSendStatus() uint8           { return e.SendStatus }
+func (e *Email) SetSendStatus(sendStatus uint8) { e.SendStatus = sendStatus }
+
 func NewEmail(email *string, name *string) *Email {
 	return &Email{
 		Email: *email,
@@ -39,4 +38,9 @@ func (e *Email) ValidateEmail() {
 
 	validity := e.verifyEmail()
 	e.Valid = validity
+	if validity == interfaces.EMAIL_INVALID {
+		logger.LogWarning(e.GetEmail() + " is not a valid email.")
+	} else {
+		logger.LogNormal(e.GetEmail() + " is a valid email.")
+	}
 }
