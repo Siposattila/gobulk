@@ -8,6 +8,7 @@ import (
 	"github.com/Siposattila/gobulk/internal/database"
 	"github.com/Siposattila/gobulk/internal/interfaces"
 	"github.com/Siposattila/gobulk/internal/kill"
+	"github.com/Siposattila/gobulk/internal/logger"
 )
 
 func main() {
@@ -35,9 +36,12 @@ func main() {
 			app.Bulk.StartConsole()
 		}
 	} else {
-		app.Sync.Start()
+		go app.Sync.Start()
 		go app.Server.Run()
 		go app.Validation.Start()
+
+		<-kill.KillCtx.Done()
+		logger.Warning("Shutdown completed.")
 	}
 }
 
