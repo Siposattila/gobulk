@@ -21,7 +21,7 @@ func Init(database interfaces.DatabaseInterface) *Validate {
 }
 
 func (v *Validate) Start() {
-	console.Normal("Validation is started. This may take a long time!!!")
+	console.Normal("Validation is started. This may take a long time!")
 
 	var (
 		results []email.Email
@@ -44,7 +44,7 @@ func (v *Validate) Start() {
 			select {
 			case <-kill.KillCtx.Done():
 				master.Stop()
-				console.Warning("Unexpected shutdown while validating emails.")
+				console.Warning("Shutdown signal received shutting down validation process.")
 
 				return errors.New("Shutdown")
 			default:

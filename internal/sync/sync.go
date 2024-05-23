@@ -52,7 +52,7 @@ func (s *Sync) syncProcess() {
 }
 
 func (s *Sync) sync() {
-	console.Normal("Sync is started. This may take a long time!!!")
+	console.Normal("Sync is started. This may take a long time!")
 	s.cacheMysqlData()
 	diff := s.getDifference()
 	var (

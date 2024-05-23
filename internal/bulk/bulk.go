@@ -78,7 +78,7 @@ func InitForServer(database interfaces.DatabaseInterface, config interfaces.Conf
 }
 
 func (b *Bulk) Start() {
-	console.Normal("Bulk email sending is starting now. This may take a long time!!!")
+	console.Normal("Bulk email sending is starting now. This may take a long time!")
 
 	var (
 		emails []email.Email
@@ -102,7 +102,7 @@ func (b *Bulk) Start() {
 			bar.Add(1)
 			select {
 			case <-kill.KillCtx.Done():
-				console.Warning("Unexpected shutdown while sending emails.")
+				console.Warning("Shutdown signal received shutting down bulk sending process.")
 
 				return errors.New("Shutdown")
 			default:
