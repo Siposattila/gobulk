@@ -27,8 +27,8 @@ func (v *validation) Start() {
 	logger.Normal("Validation is started. This may take a long time!")
 
 	var (
-		results []email.Email
-		total   int64
+		emails []email.Email
+		total  int64
 	)
 	v.database.GetEntityManager().GetGormORM().Find(
 		&email.Email{},
@@ -43,8 +43,8 @@ func (v *validation) Start() {
 	v.database.GetEntityManager().GetGormORM().Where(
 		"status = ? AND valid = ?",
 		interfaces.EMAIL_STATUS_ACTIVE, interfaces.EMAIL_UNKNOWN,
-	).FindInBatches(&results, 100, func(tx *gorm.DB, batch int) error {
-		for _, result := range results {
+	).FindInBatches(&emails, 100, func(tx *gorm.DB, batch int) error {
+		for _, mail := range emails {
 			select {
 			case <-kill.KillCtx.Done():
 				logger.Warning("Shutdown signal received shutting down validation process.")
@@ -53,8 +53,8 @@ func (v *validation) Start() {
 				return errors.New("Shutdown")
 			default:
 				master.NewWork(func() {
-					result.ValidateEmail()
-					v.database.GetEntityManager().GetGormORM().Save(result)
+					mail.ValidateEmail()
+					v.database.GetEntityManager().GetGormORM().Save(mail)
 				})
 			}
 		}

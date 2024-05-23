@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/Siposattila/gobulk/internal/interfaces"
+	"github.com/Siposattila/gobulk/internal/logger"
 )
 
 func (e *Email) verifyEmail() uint8 {
@@ -21,6 +22,8 @@ func (e *Email) verifyEmail() uint8 {
 
 	client, err := smtp.Dial(mxHost + ":25")
 	if err != nil {
+		logger.LogError(err)
+
 		return interfaces.EMAIL_INVALID
 	}
 	defer client.Close()
@@ -31,6 +34,8 @@ func (e *Email) verifyEmail() uint8 {
 	client.Quit()
 
 	if rcptErr != nil {
+		logger.LogError(rcptErr)
+
 		return interfaces.EMAIL_INVALID
 	}
 
