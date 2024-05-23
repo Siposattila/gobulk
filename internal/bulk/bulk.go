@@ -119,7 +119,6 @@ func (b *bulk) checkStatusOfBulk() {
 	}
 
 	if totalNotSent == 0 {
-		logger.Debug(totalNotSent)
 		b.database.GetEntityManager().GetGormORM().Model(email.Email{}).Where("1=1").Updates(email.Email{SendStatus: interfaces.EMAIL_SEND_STATUS_NOT_SENT})
 	}
 }
