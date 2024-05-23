@@ -3,7 +3,6 @@ package validate
 import (
 	"sync"
 
-	"github.com/Siposattila/gobulk/internal/console"
 	"github.com/schollz/progressbar/v3"
 )
 

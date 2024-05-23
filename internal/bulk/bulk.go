@@ -112,7 +112,6 @@ func (b *Bulk) Start() {
 			}
 		}
 
-		// Returning an error will stop further batch processing
 		return nil
 	})
 
