@@ -15,12 +15,13 @@ import (
 )
 
 type sync struct {
+	app      interfaces.AppInterface
 	cron     cron.Schedule
 	config   interfaces.ConfigInterface
 	database interfaces.DatabaseInterface
 }
 
-func Init(database interfaces.DatabaseInterface, config interfaces.ConfigInterface) interfaces.SyncInterface {
+func Init(app interfaces.AppInterface, database interfaces.DatabaseInterface, config interfaces.ConfigInterface) interfaces.SyncInterface {
 	cronParser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
 	schedule, parseError := cronParser.Parse(config.GetSyncCron())
 	if parseError != nil {
@@ -28,6 +29,7 @@ func Init(database interfaces.DatabaseInterface, config interfaces.ConfigInterfa
 	}
 
 	return &sync{
+		app:      app,
 		cron:     schedule,
 		config:   config,
 		database: database,

@@ -18,13 +18,15 @@ import (
 )
 
 type bulk struct {
+	app         interfaces.AppInterface
 	emailClient interfaces.EmailClientInterface
 	database    interfaces.DatabaseInterface
 	config      interfaces.ConfigInterface
 }
 
-func Init(database interfaces.DatabaseInterface, config interfaces.ConfigInterface) interfaces.BulkInterface {
+func Init(app interfaces.AppInterface, database interfaces.DatabaseInterface, config interfaces.ConfigInterface) interfaces.BulkInterface {
 	return &bulk{
+		app: app,
 		emailClient: email.NewClient(
 			config.GetEmailDSN(),
 			nil,
@@ -36,16 +38,17 @@ func Init(database interfaces.DatabaseInterface, config interfaces.ConfigInterfa
 
 func (b *bulk) StartConsole() {
 	b.emailClient.SetEmailBody(email.NewBodyConsole(b.config.GetCompanyName(), b.config.GetUnsubscribeEndpoint()))
+    b.checkStatusOfBulkConsole()
 	b.bulkSend()
 }
 
-func (b *bulk) Start(subject string, greeting string, message string, farewell string) {
+func (b *bulk) Start(subject string, greeting string, message string, farewell string, shouldContinue bool) {
 	b.emailClient.SetEmailBody(email.NewBody(subject, greeting, message, farewell, b.config.GetCompanyName(), b.config.GetUnsubscribeEndpoint()))
+    b.checkStatusOfBulk(shouldContinue)
 	b.bulkSend()
 }
 
 func (b *bulk) bulkSend() {
-	b.checkStatusOfBulk()
 	logger.Normal("Bulk email sending is starting now. This may take a long time!")
 
 	var (
@@ -88,7 +91,7 @@ func (b *bulk) bulkSend() {
 	logger.Success("Bulk email sending is done!")
 }
 
-func (b *bulk) checkStatusOfBulk() {
+func (b *bulk) checkStatusOfBulkConsole() {
 	var totalNotSent int64
 	b.database.GetEntityManager().GetGormORM().Find(
 		&email.Email{},
@@ -119,6 +122,21 @@ func (b *bulk) checkStatusOfBulk() {
 	}
 
 	if totalNotSent == 0 {
+		b.database.GetEntityManager().GetGormORM().Model(email.Email{}).Where("1=1").Updates(email.Email{SendStatus: interfaces.EMAIL_SEND_STATUS_NOT_SENT})
+	}
+}
+
+func (b *bulk) checkStatusOfBulk(shouldContinue bool) {
+	var totalNotSent int64
+	b.database.GetEntityManager().GetGormORM().Find(
+		&email.Email{},
+		"valid = ? AND status = ? AND send_status = ?",
+		interfaces.EMAIL_VALID,
+		interfaces.EMAIL_STATUS_ACTIVE,
+		interfaces.EMAIL_SEND_STATUS_NOT_SENT,
+	).Count(&totalNotSent)
+
+	if (totalNotSent != 0 && !shouldContinue) || totalNotSent == 0 {
 		b.database.GetEntityManager().GetGormORM().Model(email.Email{}).Where("1=1").Updates(email.Email{SendStatus: interfaces.EMAIL_SEND_STATUS_NOT_SENT})
 	}
 }

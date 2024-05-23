@@ -12,11 +12,13 @@ import (
 )
 
 type validation struct {
+	app      interfaces.AppInterface
 	database interfaces.DatabaseInterface
 }
 
-func Init(database interfaces.DatabaseInterface) interfaces.ValidationInterface {
+func Init(app interfaces.AppInterface, database interfaces.DatabaseInterface) interfaces.ValidationInterface {
 	return &validation{
+		app:      app,
 		database: database,
 	}
 }

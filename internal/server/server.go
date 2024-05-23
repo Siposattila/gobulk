@@ -13,18 +13,20 @@ import (
 var instance *server = &server{}
 
 type server struct {
+	app      interfaces.AppInterface
 	database interfaces.DatabaseInterface
 	config   interfaces.ConfigInterface
 	init     sync.Once
 }
 
-func ctor(database interfaces.DatabaseInterface, config interfaces.ConfigInterface) {
+func ctor(app interfaces.AppInterface, database interfaces.DatabaseInterface, config interfaces.ConfigInterface) {
+    instance.app = app
 	instance.database = database
 	instance.config = config
 }
 
-func GetServer(database interfaces.DatabaseInterface, config interfaces.ConfigInterface) interfaces.ServerInterface {
-	instance.init.Do(func() { ctor(database, config) })
+func GetServer(app interfaces.AppInterface, database interfaces.DatabaseInterface, config interfaces.ConfigInterface) interfaces.ServerInterface {
+	instance.init.Do(func() { ctor(app, database, config) })
 
 	return instance
 }
@@ -32,6 +34,7 @@ func GetServer(database interfaces.DatabaseInterface, config interfaces.ConfigIn
 func (s *server) Run() {
 	router := http.NewServeMux()
 	router.HandleFunc("GET /bulk", s.bulk)
+	router.HandleFunc("POST /send", s.send)
 	router.HandleFunc("GET /unsub/{email}", s.unsubscribe)
 	router.HandleFunc("GET /resub/{email}", s.resubscribe)
 

@@ -15,11 +15,17 @@ type App struct {
 	Server     interfaces.ServerInterface
 }
 
+func (a *App) GetSync() interfaces.SyncInterface             { return a.Sync }
+func (a *App) GetBulk() interfaces.BulkInterface             { return a.Bulk }
+func (a *App) GetValidation() interfaces.ValidationInterface { return a.Validation }
+func (a *App) GetServer() interfaces.ServerInterface         { return a.Server }
+
 func Init(database interfaces.DatabaseInterface, config interfaces.ConfigInterface) *App {
-	return &App{
-		Sync:       sync.Init(database, config),
-		Bulk:       bulk.Init(database, config),
-		Validation: validation.Init(database),
-		Server:     server.GetServer(database, config),
-	}
+	app := &App{}
+	app.Sync = sync.Init(app, database, config)
+	app.Bulk = bulk.Init(app, database, config)
+	app.Validation = validation.Init(app, database)
+	app.Server = server.GetServer(app, database, config)
+
+	return app
 }

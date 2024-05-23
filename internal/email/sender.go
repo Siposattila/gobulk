@@ -117,7 +117,7 @@ func NewBody(subject string, greeting string, message string, farewell string, c
 }
 
 func (c *client) Send(e interfaces.EmailInterface) {
-	template, error := template.ParseFiles("bulk.html")
+	template, error := template.ParseFiles("email.html")
 	if error != nil {
 		logger.Fatal("Failed to load template!")
 	}
