@@ -15,6 +15,8 @@ func (e *Email) verifyEmail() uint8 {
 
 	mxRecords, err := net.LookupMX(domain)
 	if err != nil {
+		logger.LogError(err)
+
 		return interfaces.EMAIL_INVALID
 	}
 
