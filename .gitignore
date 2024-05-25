@@ -4,6 +4,7 @@ cmd/gobulk/*
 !cmd/gobulk/email.html
 !cmd/gobulk/unsub.html
 !cmd/gobulk/resub.html
+!cmd/gobulk/Makefile
 .docker/db/*
 !.docker/db/base.sql
 gobulk.log

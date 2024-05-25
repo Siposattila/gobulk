@@ -11,6 +11,12 @@ import (
 	"github.com/Siposattila/gobulk/internal/logger"
 )
 
+var (
+	version   = "v0.0.0"
+	buildTime = "0000.00.00."
+	buildHash = "0000000000"
+)
+
 func main() {
 	flag.Bool("up", false, "This flag will start gobulk as a process.")
 	flag.Bool(
@@ -20,24 +26,32 @@ func main() {
 	)
 	flag.Bool("validate", false, "This flag will start gobulk's validate process which will validate the email addresses in local db.")
 	flag.Bool("bulk", false, "This flag will start gobulk's bulk email sending process.")
+	flag.Bool("version", false, "Version information of gobulk.")
 	flag.Parse()
 
 	kill.ListenForKill()
 
-	var conf interfaces.ConfigInterface
-	app := app.Init(database.GetDatabase(conf), config.GetConfig(nil))
+	var (
+		conf   interfaces.ConfigInterface
+		gobulk *app.App
+	)
+	if !isFlagPassed("version") {
+		gobulk = app.Init(database.GetDatabase(conf), config.GetConfig(nil))
+	}
 
 	if !isFlagPassed("up") {
 		if isFlagPassed("sync") {
-			app.Sync.Start()
+			gobulk.Sync.Start()
 		} else if isFlagPassed("validate") {
-			app.Validation.Start()
+			gobulk.Validation.Start()
 		} else if isFlagPassed("bulk") {
-			app.Bulk.StartConsole()
+			gobulk.Bulk.StartConsole()
+		} else if isFlagPassed("version") {
+			logger.Normal("\nVersion: ", version, "\nBuild: ", buildTime, "\nHash: ", buildHash, "\n")
 		}
 	} else {
 		// go app.Sync.Start()
-		go app.Server.Run()
+		go gobulk.Server.Run()
 		// go app.Validation.Start()
 
 		<-kill.KillCtx.Done()
