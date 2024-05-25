@@ -124,7 +124,7 @@ func (c *client) Send(e interfaces.EmailInterface) {
 
 	var body bytes.Buffer
 	mimeHeaders := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
-	body.Write([]byte(fmt.Sprintf("Subject: %s \nFrom: %s \nTo: %s \n%s\n\n", c.body.GetSubject(), c.email, e.GetEmail(), mimeHeaders)))
+	body.Write([]byte(fmt.Sprintf("Subject: %s \nFrom: %s \nTo: %s \n%s\n\n", c.body.GetSubject(), c.body.GetCompany(), e.GetEmail(), mimeHeaders)))
 
 	unsubscribeUrl := c.body.GetUnsubscribe() + "/" + e.GetEmail()
 	greeting := strings.ReplaceAll(c.body.GetGreeting(), "[name]", e.GetName())

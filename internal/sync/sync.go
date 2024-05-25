@@ -60,13 +60,12 @@ func (s *sync) sync() {
 	diff := s.getDifference()
 	var (
 		batchInsert []email.Email
-		total       int64
+		total       = len(diff)
 	)
-	s.database.GetEntityManager().GetGormORM().Find(&email.Cache{}).Count(&total)
 
 	logger.Warning("Synchronizing local database!")
 	if len(diff) > 0 {
-		bar := progressbar.Default(total)
+		bar := progressbar.Default(int64(total))
 
 		for _, d := range diff {
 			bar.Add(1)
