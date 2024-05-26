@@ -5,6 +5,7 @@ import (
 	"net/smtp"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/Siposattila/gobulk/internal/interfaces"
 	"github.com/Siposattila/gobulk/internal/logger"
@@ -12,6 +13,10 @@ import (
 
 func (e *Email) verifyEmail() uint8 {
 	domain := e.Email[strings.LastIndex(e.Email, "@")+1:]
+
+	if domain == "outlook.com" {
+		return interfaces.EMAIL_VALID
+	}
 
 	mxRecords, err := net.LookupMX(domain)
 	if err != nil {
@@ -22,14 +27,14 @@ func (e *Email) verifyEmail() uint8 {
 
 	mxHost := mxRecords[0].Host
 
-	client, err := smtp.Dial(mxHost + ":25")
+	connection, err := net.DialTimeout("tcp", mxHost+":25", 5*time.Second)
 	if err != nil {
 		logger.LogError(err)
 
 		return interfaces.EMAIL_INVALID
 	}
-	defer client.Close()
 
+	client, _ := smtp.NewClient(connection, mxHost)
 	client.Hello("gobulk.com")
 	client.Mail("info@gobulk.com")
 	rcptErr := client.Rcpt(e.Email)

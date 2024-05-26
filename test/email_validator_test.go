@@ -42,3 +42,12 @@ func TestValidatorOnFreemail(t *testing.T) {
 		t.Fatalf("e.Valid should be true on gobulk@fremail.hu")
 	}
 }
+
+func TestValidatorOnOutlook(t *testing.T) {
+	e := email.Email{Email: "gobulk2024@outlook.com"}
+	e.ValidateEmail()
+
+	if e.Valid == interfaces.EMAIL_INVALID {
+		t.Fatalf("e.Valid should be true on gobulk2024@outlook.com")
+	}
+}
