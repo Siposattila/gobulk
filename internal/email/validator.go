@@ -34,7 +34,13 @@ func (e *Email) verifyEmail() uint8 {
 		return interfaces.EMAIL_INVALID
 	}
 
-	client, _ := smtp.NewClient(connection, mxHost)
+	client, err := smtp.NewClient(connection, mxHost)
+    if err != nil {
+        logger.LogError(err)
+
+        return interfaces.EMAIL_INVALID
+    }
+
 	client.Hello("gobulk.com")
 	client.Mail("info@gobulk.com")
 	rcptErr := client.Rcpt(e.Email)
